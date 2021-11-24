@@ -1,0 +1,8 @@
+(library
+ (public_name ppx_monolith)
+ (kind ppx_deriver)
+ (preprocess
+  (pps ppxlib.metaquot))
+ (ppx_runtime_libraries monolith pprint)
+ (libraries ppxlib)
+ (modules ppx_deriving_monolith generators printers specs))

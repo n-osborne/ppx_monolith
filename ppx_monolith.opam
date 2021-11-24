@@ -1,0 +1,12 @@
+opam-version: "2.0"
+name: "ppx_monolith"
+synopsis: ""
+maintainer: "nicolas.osborne@tarides.com"
+authors: "nicolas.osborne@tarides.com"
+depends: [
+  "ocaml"
+  "dune"
+  "ppxlib"]
+build: [
+  ["dune" "subst"] 
+  "dune" "build" "-p" name "-j" jobs "@install" "@runtest" {with-test} "@doc" {with-doc}]
