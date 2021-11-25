@@ -39,12 +39,12 @@ include
       Monolith.Gen.array (Monolith.Gen.int Sys.max_array_length)
         (Monolith.Gen.closed_interval Int.min_int Int.max_int)
     let __monolith_t3_spec_ =
-      let gen =
-        Monolith.Gen.array (Monolith.Gen.int Sys.max_array_length)
-          (Monolith.Gen.closed_interval Int.min_int Int.max_int) in
-      let printer = Monolith.Print.array Monolith.Print.int in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible
+           (Monolith.Gen.array (Monolith.Gen.int Sys.max_array_length)
+              (Monolith.Gen.closed_interval Int.min_int Int.max_int))
+           (Monolith.Print.array Monolith.Print.int))
+        (Monolith.deconstructible (Monolith.Print.array Monolith.Print.int))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t4 = string[@@deriving monolith]
 include
@@ -54,12 +54,11 @@ include
       Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
         Monolith.Gen.char
     let __monolith_t4_spec_ =
-      let gen =
-        Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
-          Monolith.Gen.char in
-      let printer = Monolith.Print.string in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible
+           (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
+              Monolith.Gen.char) Monolith.Print.string)
+        (Monolith.deconstructible Monolith.Print.string)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t5 = (int, string) result[@@deriving monolith]
 include
@@ -73,12 +72,11 @@ include
            Monolith.Gen.char)
     let __monolith_t5_spec_ =
       Monolith.result (Monolith.closed_interval Int.min_int Int.max_int)
-        (let gen =
-           Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
-             Monolith.Gen.char in
-         let printer = Monolith.Print.string in
-         Monolith.ifpol (Monolith.easily_constructible gen printer)
-           (Monolith.deconstructible printer))
+        (Monolith.ifpol
+           (Monolith.easily_constructible
+              (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
+                 Monolith.Gen.char) Monolith.Print.string)
+           (Monolith.deconstructible Monolith.Print.string))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t6 = (int * string)[@@deriving monolith]
 include
@@ -92,16 +90,21 @@ include
         (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
            Monolith.Gen.char ()))
     let __monolith_t6_spec_ =
-      let gen () =
-        ((Monolith.Gen.closed_interval Int.min_int Int.max_int ()),
-          (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
-             Monolith.Gen.char ())) in
-      let printer x =
-        let (elt__0, elt__1) = x in
-        PPrintOCaml.tuple
-          [Monolith.Print.int elt__0; Monolith.Print.string elt__1] in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible
+           (fun () ->
+              ((Monolith.Gen.closed_interval Int.min_int Int.max_int ()),
+                (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
+                   Monolith.Gen.char ())))
+           (fun x ->
+              let (elt__0, elt__1) = x in
+              PPrintOCaml.tuple
+                [Monolith.Print.int elt__0; Monolith.Print.string elt__1]))
+        (Monolith.deconstructible
+           (fun x ->
+              let (elt__0, elt__1) = x in
+              PPrintOCaml.tuple
+                [Monolith.Print.int elt__0; Monolith.Print.string elt__1]))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t7 =
   | C0 
@@ -147,44 +150,10 @@ include
                  ())))|] in
       (v.(Monolith.Gen.int (Array.length v) ())) ()
     let __monolith_t7_spec_ =
-      let gen () =
-        let v =
-          [|((fun () -> C0));((fun () ->
-                                 C1
-                                   (Monolith.Gen.closed_interval Int.min_int
-                                      Int.max_int ())));((fun () ->
-                                                            C2
-                                                              ((Monolith.Gen.closed_interval
-                                                                  Int.min_int
-                                                                  Int.max_int
-                                                                  ()),
-                                                                (Monolith.Gen.string
-                                                                   (Monolith.Gen.int
-                                                                    Sys.max_string_length)
-                                                                   Monolith.Gen.char
-                                                                   ()))));((
-            fun () ->
-              C3
-                ((fun () -> ((Monolith.Gen.char ()), (Monolith.Gen.bool ())))
-                   ())))|] in
-        (v.(Monolith.Gen.int (Array.length v) ())) () in
-      let printer =
-        function
-        | C0 -> PPrintOCaml.variant "" "C0" 0 []
-        | C1 pp_arg0 ->
-            PPrintOCaml.variant "" "C1" 0 [Monolith.Print.int pp_arg0]
-        | C2 (pp_arg0, pp_arg1) ->
-            PPrintOCaml.variant "" "C2" 0
-              [Monolith.Print.int pp_arg0; Monolith.Print.string pp_arg1]
-        | C3 pp_arg0 ->
-            PPrintOCaml.variant "" "C3" 0
-              [((fun x ->
-                   let (elt__0, elt__1) = x in
-                   PPrintOCaml.tuple
-                     [Monolith.Print.char elt__0; Monolith.Print.bool elt__1]))
-                 pp_arg0] in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_t7_gen_
+           __monolith_t7_printer_)
+        (Monolith.deconstructible __monolith_t7_printer_)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t8 = {
   f0: int ;
@@ -202,19 +171,10 @@ include
              Monolith.Gen.char ())
       }
     let __monolith_t8_spec_ =
-      let gen () =
-        {
-          f0 = (Monolith.Gen.closed_interval Int.min_int Int.max_int ());
-          f1 =
-            (Monolith.Gen.string (Monolith.Gen.int Sys.max_string_length)
-               Monolith.Gen.char ())
-        } in
-      let printer { f0; f1 } =
-        PPrintOCaml.record ""
-          [("f0", (Monolith.Print.int f0));
-          ("f1", (Monolith.Print.string f1))] in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_t8_gen_
+           __monolith_t8_printer_)
+        (Monolith.deconstructible __monolith_t8_printer_)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t9 = t0[@@deriving monolith]
 include
@@ -235,14 +195,10 @@ include
     let __monolith_t10_gen_ () =
       { f2 = (__monolith_t7_gen_ ()); f3 = (__monolith_t8_gen_ ()) }
     let __monolith_t10_spec_ =
-      let gen () =
-        { f2 = (__monolith_t7_gen_ ()); f3 = (__monolith_t8_gen_ ()) } in
-      let printer { f2; f3 } =
-        PPrintOCaml.record ""
-          [("f2", (__monolith_t7_printer_ f2));
-          ("f3", (__monolith_t8_printer_ f3))] in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_t10_gen_
+           __monolith_t10_printer_)
+        (Monolith.deconstructible __monolith_t10_printer_)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t11 = (t9 * t10)[@@deriving monolith]
 include
@@ -254,11 +210,18 @@ include
     let __monolith_t11_gen_ () =
       ((__monolith_t9_gen_ ()), (__monolith_t10_gen_ ()))
     let __monolith_t11_spec_ =
-      let gen () = ((__monolith_t9_gen_ ()), (__monolith_t10_gen_ ())) in
-      let printer x =
-        let (elt__0, elt__1) = x in
-        PPrintOCaml.tuple
-          [__monolith_t9_printer_ elt__0; __monolith_t10_printer_ elt__1] in
-      Monolith.ifpol (Monolith.easily_constructible gen printer)
-        (Monolith.deconstructible printer)
+      Monolith.ifpol
+        (Monolith.easily_constructible
+           (fun () -> ((__monolith_t9_gen_ ()), (__monolith_t10_gen_ ())))
+           (fun x ->
+              let (elt__0, elt__1) = x in
+              PPrintOCaml.tuple
+                [__monolith_t9_printer_ elt__0;
+                __monolith_t10_printer_ elt__1]))
+        (Monolith.deconstructible
+           (fun x ->
+              let (elt__0, elt__1) = x in
+              PPrintOCaml.tuple
+                [__monolith_t9_printer_ elt__0;
+                __monolith_t10_printer_ elt__1]))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]

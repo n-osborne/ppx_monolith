@@ -5,26 +5,24 @@ open Utils
 
 let spec ~loc gen printer =
   [%expr
-    let gen = [%e gen] in
-    let printer = [%e printer] in
     Monolith.ifpol
-      (Monolith.easily_constructible gen printer)
-      (Monolith.deconstructible printer)]
+      (Monolith.easily_constructible [%e gen] [%e printer])
+      (Monolith.deconstructible [%e printer])]
 
-let spec_variant ~loc cds =
-  let gen = gen_variant ~loc cds in
-  let printer = printer_variant ~loc cds in
+let spec_variant ~loc ~name =
+  let gen = var ~loc name Gen in
+  let printer = var ~loc name Printer in
   spec ~loc gen printer
 
-let spec_record ~loc ldl =
-  let gen = gen_record ~loc ldl in
-  let printer = printer_record ~loc ldl in
+let spec_record ~loc ~name =
+  let gen = var ~loc name Gen in
+  let printer = var ~loc name Printer in
   spec ~loc gen printer
 
-let spec_kind ~loc (tk : type_kind) =
+let spec_kind ~loc ~name (tk : type_kind) =
   match tk with
-  | Ptype_variant cds -> spec_variant ~loc cds
-  | Ptype_record ldl -> spec_record ~loc ldl
+  | Ptype_variant _ -> spec_variant ~loc ~name
+  | Ptype_record _ -> spec_record ~loc ~name
   | Ptype_open -> dummy ~loc "spec_kind Ptype_open"
   | Ptype_abstract -> dummy ~loc "spec_kind Ptype_abstract"
 
@@ -80,23 +78,23 @@ and spec_tuple ~loc tys =
   let printer = printer_tuple ~loc tys in
   spec ~loc gen printer
 
-let spec_expr ~loc (type_decl : type_declaration) =
+let spec_expr ~loc ~name (type_decl : type_declaration) =
   Option.fold
-    ~none:(spec_kind ~loc type_decl.ptype_kind)
+    ~none:(spec_kind ~loc ~name type_decl.ptype_kind)
     ~some:(spec_core_type ~loc) type_decl.ptype_manifest
 
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
-  let type_decl td =
-    let pat = pat ~loc td.ptype_name.txt in
-    [
-      [%stri let [%p pat Printer] = [%e printer_expr ~loc td]];
-      [%stri let [%p pat Gen] = [%e gen_expr ~loc td]];
-      [%stri let [%p pat Spec] = [%e spec_expr ~loc td]];
-    ]
+  let make kind f td =
+    [%stri let [%p pat ~loc td.ptype_name.txt kind] = [%e f ~loc td]]
+  in
+  let printer = make Printer printer_expr in
+  let gen = make Gen gen_expr in
+  let spec =
+    make Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
   in
   match type_decls with
   | [] -> assert false
-  | [ td ] -> type_decl td
+  | [ td ] -> [ printer td; gen td; spec td ]
   | _tds ->
       (* don't know what to do yet *)
       assert false
