@@ -1,5 +1,4 @@
 open Ppxlib
-open Ast_builder.Default
 open Generators
 open Printers
 open Utils
@@ -87,16 +86,17 @@ let spec_expr ~loc (type_decl : type_declaration) =
     ~some:(spec_core_type ~loc) type_decl.ptype_manifest
 
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
-  let pat = pat ~loc (List.hd type_decls).ptype_name.txt in
-  let gen = gen_expr ~loc (List.hd type_decls) in
-  let gen_description = value_binding ~loc ~pat:(pat Gen) ~expr:gen in
-  let printer = printer_expr ~loc (List.hd type_decls) in
-  let printer_description =
-    value_binding ~loc ~pat:(pat Printer) ~expr:printer
+  let type_decl td =
+    let pat = pat ~loc td.ptype_name.txt in
+    [
+      [%stri let [%p pat Printer] = [%e printer_expr ~loc td]];
+      [%stri let [%p pat Gen] = [%e gen_expr ~loc td]];
+      [%stri let [%p pat Spec] = [%e spec_expr ~loc td]];
+    ]
   in
-  let spec = spec_expr ~loc (List.hd type_decls) in
-  let spec_description = value_binding ~loc ~pat:(pat Spec) ~expr:spec in
-  [
-    pstr_value ~loc Nonrecursive
-      [ printer_description; gen_description; spec_description ];
-  ]
+  match type_decls with
+  | [] -> assert false
+  | [ td ] -> type_decl td
+  | _tds ->
+      (* don't know what to do yet *)
+      assert false
