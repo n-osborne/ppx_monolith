@@ -1,8 +1,6 @@
 open Ppxlib
-
-let dummy ~loc str =
-  Ast_builder.Default.pexp_constant ~loc
-    (Pconst_string (str, Location.none, None))
+open Ast_builder.Default
+open Utils
 
 let rec gen_core_type ~loc (ct : core_type) =
   match ct.ptyp_desc with
@@ -21,11 +19,9 @@ let rec gen_core_type ~loc (ct : core_type) =
 
 and gen_tuple ~loc tys =
   let gen =
-    Ast_builder.Default.pexp_tuple ~loc
+    pexp_tuple ~loc
       (List.map
-         (fun t ->
-           Ast_builder.Default.eapply ~loc (gen_core_type ~loc t)
-             [ Ast_builder.Default.eunit ~loc ])
+         (fun t -> eapply ~loc (gen_core_type ~loc t) [ eunit ~loc ])
          tys)
   in
   [%expr fun () -> [%e gen]]
@@ -58,6 +54,7 @@ and gen_longident ~loc txt args =
       let ok = gen_core_type ~loc (List.hd args) in
       let err = gen_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Gen.result [%e ok] [%e err]]
+  | Lident id -> var ~loc id Gen
   | _ -> dummy ~loc "gen_longident catch all"
 
 let gen_variant ~loc cds =
@@ -66,22 +63,18 @@ let gen_variant ~loc cds =
     | Pcstr_tuple cts ->
         List.map
           (fun ct ->
-            gen_core_type ~loc ct |> fun e ->
-            Ast_builder.Default.eapply ~loc e [ Ast_builder.Default.eunit ~loc ])
+            gen_core_type ~loc ct |> fun e -> eapply ~loc e [ eunit ~loc ])
           cts
-        |> Ast_builder.Default.pexp_tuple_opt ~loc
+        |> pexp_tuple_opt ~loc
     | Pcstr_record _ldl -> Some (dummy ~loc "variant constructor with a record")
   in
   (* a function that construct a generator of a constructor and its arguments *)
   let variant cd =
-    let cstr =
-      Ast_builder.Default.pexp_construct ~loc
-        { txt = Lident cd.pcd_name.txt; loc }
-    in
+    let cstr = pexp_construct ~loc { txt = Lident cd.pcd_name.txt; loc } in
     [%expr fun () -> [%e cstr (cstr_arg cd.pcd_args)]]
   in
   (* an array of the different constructors with their arguments *)
-  let variants = List.map variant cds |> Ast_builder.Default.pexp_array ~loc in
+  let variants = List.map variant cds |> pexp_array ~loc in
   (* the generator choose one of the constructor *)
   [%expr
     fun () ->
@@ -91,9 +84,19 @@ let gen_variant ~loc cds =
 let gen_record ~loc cds =
   let field fd =
     ( { txt = Lident fd.pld_name.txt; loc },
-      Ast_builder.Default.eapply ~loc
-        (gen_core_type ~loc fd.pld_type)
-        [ Ast_builder.Default.eunit ~loc ] )
+      eapply ~loc (gen_core_type ~loc fd.pld_type) [ eunit ~loc ] )
   in
-  let record = Ast_builder.Default.pexp_record ~loc (List.map field cds) None in
+  let record = pexp_record ~loc (List.map field cds) None in
   [%expr fun () -> [%e record]]
+
+let gen_kind ~loc (tk : type_kind) =
+  match tk with
+  | Ptype_abstract -> dummy ~loc "gen_kind Ptype_abstract"
+  | Ptype_variant cds -> gen_variant ~loc cds
+  | Ptype_record ldl -> gen_record ~loc ldl
+  | Ptype_open -> dummy ~loc "gen_kind Ptype_open"
+
+let gen_expr ~loc (type_decl : type_declaration) =
+  Option.fold
+    ~none:(gen_kind ~loc type_decl.ptype_kind)
+    ~some:(gen_core_type ~loc) type_decl.ptype_manifest

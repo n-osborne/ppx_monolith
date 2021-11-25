@@ -1,8 +1,6 @@
 open Ppxlib
-
-let dummy ~loc str =
-  Ast_builder.Default.pexp_constant ~loc
-    (Pconst_string (str, Location.none, None))
+open Ast_builder.Default
+open Utils
 
 let rec printer_core_type ~loc ct =
   match ct.ptyp_desc with
@@ -22,16 +20,10 @@ let rec printer_core_type ~loc ct =
 and printer_tuple ~loc tys =
   let printers = List.map (printer_core_type ~loc) tys in
   let elts = List.mapi (fun i _ -> "elt__" ^ Int.to_string i) tys in
-  let vars = List.map (Ast_builder.Default.evar ~loc) elts in
-  let pats =
-    Ast_builder.Default.ppat_tuple ~loc
-      (List.map (Ast_builder.Default.pvar ~loc) elts)
-  in
+  let vars = List.map (evar ~loc) elts in
+  let pats = ppat_tuple ~loc (List.map (pvar ~loc) elts) in
   let tuple =
-    Ast_builder.Default.elist ~loc
-      (List.map2
-         (fun p v -> Ast_builder.Default.eapply ~loc p [ v ])
-         printers vars)
+    elist ~loc (List.map2 (fun p v -> eapply ~loc p [ v ]) printers vars)
   in
   [%expr
     fun x ->
@@ -61,6 +53,7 @@ and printer_longident ~loc txt args =
       let ok = printer_core_type ~loc (List.hd args) in
       let err = printer_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Print.result [%e ok] [%e err]]
+  | Lident id -> var ~loc id Printer
   | _ -> dummy ~loc "printer_longident catch all"
 
 let printer_variant ~loc ldl =
@@ -73,51 +66,56 @@ let printer_variant ~loc ldl =
         (* a list of names for the arguments *)
         let xs = List.mapi (fun i _ -> "pp_arg" ^ Int.to_string i) args in
         (* bundle the arguments in an optional tuple of pattern variables*)
-        let parg =
-          Ast_builder.Default.ppat_tuple_opt ~loc
-            (List.map (Ast_builder.Default.pvar ~loc) xs)
-        in
+        let parg = ppat_tuple_opt ~loc (List.map (pvar ~loc) xs) in
         (* left hand side is C (a0, a1,...) *)
-        let lhs = Ast_builder.Default.ppat_construct ~loc cident parg in
+        let lhs = ppat_construct ~loc cident parg in
         (* let's call the respective printers on the arguments of the constructor *)
         let pp_args =
           List.map2
             (fun x ty ->
               let printer = printer_core_type ~loc ty in
-              Ast_builder.Default.eapply ~loc printer
-                [ Ast_builder.Default.evar ~loc x ])
+              eapply ~loc printer [ evar ~loc x ])
             xs args
-          |> Ast_builder.Default.elist ~loc
+          |> elist ~loc
         in
         (* right hand side print the variant *)
         let rhs =
           [%expr
             PPrintOCaml.variant ""
-              [%e Ast_builder.Default.estring ~loc cd.pcd_name.txt]
+              [%e estring ~loc cd.pcd_name.txt]
               0 [%e pp_args]]
         in
-        Ast_builder.Default.case ~guard:None ~lhs ~rhs
+        case ~guard:None ~lhs ~rhs
     | _ -> assert false
   in
   let cases = List.map variant ldl in
-  Ast_builder.Default.pexp_function ~loc cases
+  pexp_function ~loc cases
 
 let printer_record ~loc ldl =
   let pat pld =
-    ( { txt = Lident pld.pld_name.txt; loc },
-      Ast_builder.Default.pvar ~loc pld.pld_name.txt )
+    ({ txt = Lident pld.pld_name.txt; loc }, pvar ~loc pld.pld_name.txt)
   in
-  let rec_pat =
-    Ast_builder.Default.ppat_record ~loc (List.map pat ldl) Closed
-  in
+  let rec_pat = ppat_record ~loc (List.map pat ldl) Closed in
   let pp_field pld =
-    Ast_builder.Default.pexp_tuple ~loc
+    pexp_tuple ~loc
       [
-        Ast_builder.Default.estring ~loc pld.pld_name.txt;
-        Ast_builder.Default.eapply ~loc
+        estring ~loc pld.pld_name.txt;
+        eapply ~loc
           (printer_core_type ~loc pld.pld_type)
-          [ Ast_builder.Default.evar ~loc pld.pld_name.txt ];
+          [ evar ~loc pld.pld_name.txt ];
       ]
   in
-  let fields = List.map pp_field ldl |> Ast_builder.Default.elist ~loc in
+  let fields = List.map pp_field ldl |> elist ~loc in
   [%expr fun [%p rec_pat] -> PPrintOCaml.record "" [%e fields]]
+
+let printer_kind ~loc (tk : type_kind) =
+  match tk with
+  | Ptype_abstract -> dummy ~loc "printer_kind Ptype_abstract"
+  | Ptype_variant cds -> printer_variant ~loc cds
+  | Ptype_record ldl -> printer_record ~loc ldl
+  | Ptype_open -> dummy ~loc "printer_kind Ptype_open"
+
+let printer_expr ~loc (type_decl : type_declaration) =
+  Option.fold
+    ~none:(printer_kind ~loc type_decl.ptype_kind)
+    ~some:(printer_core_type ~loc) type_decl.ptype_manifest

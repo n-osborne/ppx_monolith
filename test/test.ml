@@ -10,3 +10,6 @@ type t7 = C0 | C1 of int | C2 of int * string | C3 of (char * bool)
 [@@deriving monolith]
 
 type t8 = { f0 : int; f1 : string } [@@deriving monolith]
+type t9 = t0 [@@deriving monolith]
+type t10 = { f2 : t7; f3 : t8 } [@@deriving monolith]
+type t11 = t9 * t10 [@@deriving monolith]

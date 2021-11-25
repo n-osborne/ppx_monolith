@@ -1,10 +1,8 @@
 open Ppxlib
+open Ast_builder.Default
 open Generators
 open Printers
-
-let dummy ~loc str =
-  Ast_builder.Default.pexp_constant ~loc
-    (Pconst_string (str, Location.none, None))
+open Utils
 
 let spec ~loc gen printer =
   [%expr
@@ -74,7 +72,7 @@ and spec_longident ~loc txt args =
       let ok = spec_core_type ~loc (List.hd args) in
       let err = spec_core_type ~loc (List.nth args 1) in
       [%expr Monolith.result [%e ok] [%e err]]
-  | Lident _ -> dummy ~loc "spec_longident Lident"
+  | Lident id -> var ~loc id Spec
   | Ldot (_, _) -> dummy ~loc "spec_longident Ldot"
   | Lapply (_, _) -> dummy ~loc "spec_longident Lapply"
 
@@ -88,12 +86,17 @@ let spec_expr ~loc (type_decl : type_declaration) =
     ~none:(spec_kind ~loc type_decl.ptype_kind)
     ~some:(spec_core_type ~loc) type_decl.ptype_manifest
 
-let spec_pat ~loc (type_decl : type_declaration) =
-  let txt = type_decl.ptype_name.txt ^ "_spec" in
-  Ast_builder.Default.pvar ~loc txt
-
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
-  let pat = spec_pat ~loc (List.hd type_decls) in
-  let expr = spec_expr ~loc (List.hd type_decls) in
-  let value_description = Ast_builder.Default.value_binding ~loc ~pat ~expr in
-  [ Ast_builder.Default.pstr_value ~loc Nonrecursive [ value_description ] ]
+  let pat = pat ~loc (List.hd type_decls).ptype_name.txt in
+  let gen = gen_expr ~loc (List.hd type_decls) in
+  let gen_description = value_binding ~loc ~pat:(pat Gen) ~expr:gen in
+  let printer = printer_expr ~loc (List.hd type_decls) in
+  let printer_description =
+    value_binding ~loc ~pat:(pat Printer) ~expr:printer
+  in
+  let spec = spec_expr ~loc (List.hd type_decls) in
+  let spec_description = value_binding ~loc ~pat:(pat Spec) ~expr:spec in
+  [
+    pstr_value ~loc Nonrecursive
+      [ printer_description; gen_description; spec_description ];
+  ]
