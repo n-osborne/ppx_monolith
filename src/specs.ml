@@ -29,7 +29,7 @@ let spec_kind ~loc ~name (tk : type_kind) =
 let rec spec_core_type ~loc (ct : core_type) =
   match ct.ptyp_desc with
   | Ptyp_any -> Raise.Unsupported.coretype ~loc "wildcard"
-  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "alpha"
+  | Ptyp_var _ -> [%expr Monolith.sequential ()]
   | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "arrow"
   | Ptyp_tuple tys -> spec_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> spec_longident ~loc txt args

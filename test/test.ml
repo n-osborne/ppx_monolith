@@ -17,3 +17,5 @@ type t11 = t9 * t10 [@@deriving monolith]
 type mutual_1 = C4 of mutual_2 [@@deriving monolith]
 
 and mutual_2 = C5 of mutual_1 | C6 of int [@@deriving monolith]
+
+type 'a t12 = 'a list [@@deriving monolith]

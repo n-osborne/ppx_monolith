@@ -301,3 +301,11 @@ include
            __monolith__printer_mutual_2)
         (Monolith.deconstructible __monolith__printer_mutual_2)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
+type 'a t12 = 'a list[@@deriving monolith]
+include
+  struct
+    let __monolith__printer_t12 = Monolith.Print.list Monolith.Print.int
+    let __monolith__gen_t12 =
+      Monolith.Gen.list (Monolith.Gen.int 42000) Monolith.Gen.sequential
+    let __monolith__spec_t12 = Monolith.list (Monolith.sequential ())
+  end[@@ocaml.doc "@inline"][@@merlin.hide ]

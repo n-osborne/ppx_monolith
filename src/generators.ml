@@ -5,7 +5,7 @@ open Utils
 let rec gen_core_type ~loc (ct : core_type) =
   match ct.ptyp_desc with
   | Ptyp_any -> Raise.Unsupported.coretype ~loc "wildcard"
-  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "alpha"
+  | Ptyp_var _ -> [%expr Monolith.Gen.sequential]
   | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "arrow"
   | Ptyp_tuple tys -> gen_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> gen_longident ~loc txt args
