@@ -4,18 +4,18 @@ open Utils
 
 let rec printer_core_type ~loc ct =
   match ct.ptyp_desc with
-  | Ptyp_any -> Raise.Unsupported.coretype ~loc "Ptyp_any"
-  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "Ptyp_var"
-  | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "Ptyp_arrow"
+  | Ptyp_any -> Raise.Unsupported.coretype ~loc "wildcard"
+  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "alpha"
+  | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "arrow"
   | Ptyp_tuple tys -> printer_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> printer_longident ~loc txt args
-  | Ptyp_object (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_object"
-  | Ptyp_class (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_class"
-  | Ptyp_alias (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_alias"
-  | Ptyp_variant (_, _, _) -> Raise.Unsupported.coretype ~loc "Ptyp_variant"
-  | Ptyp_poly (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_poly"
-  | Ptyp_package _ -> Raise.Unsupported.coretype ~loc "Ptpy_package"
-  | Ptyp_extension _ -> Raise.Unsupported.coretype ~loc "Ptyp_extension"
+  | Ptyp_object (_, _) -> Raise.Unsupported.coretype ~loc "object"
+  | Ptyp_class (_, _) -> Raise.Unsupported.coretype ~loc "class"
+  | Ptyp_alias (_, _) -> Raise.Unsupported.coretype ~loc "alias"
+  | Ptyp_variant (_, _, _) -> Raise.Unsupported.coretype ~loc "variant"
+  | Ptyp_poly (_, _) -> Raise.Unsupported.coretype ~loc "poly"
+  | Ptyp_package _ -> Raise.Unsupported.coretype ~loc "package"
+  | Ptyp_extension _ -> Raise.Unsupported.coretype ~loc "extension"
 
 and printer_tuple ~loc tys =
   let printers = List.map (printer_core_type ~loc) tys in

@@ -8,6 +8,6 @@ let kind_to_string = function
   | Gen -> "_gen_"
   | Printer -> "_printer_"
 
-let symbol name kind = "__monolith_" ^ name ^ kind_to_string kind
+let symbol name kind = "__monolith_" ^ kind_to_string kind ^ name
 let pat ~loc name kind = pvar ~loc (symbol name kind)
 let var ~loc name kind = evar ~loc (symbol name kind)
