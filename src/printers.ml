@@ -4,18 +4,18 @@ open Utils
 
 let rec printer_core_type ~loc ct =
   match ct.ptyp_desc with
-  | Ptyp_any -> dummy ~loc "printer_core_type Ptyp_any"
-  | Ptyp_var _ -> dummy ~loc "printer_core_type Ptyp_var"
-  | Ptyp_arrow (_, _, _) -> dummy ~loc "printer_core_type Ptyp_arrow"
+  | Ptyp_any -> Raise.Unsupported.coretype ~loc "Ptyp_any"
+  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "Ptyp_var"
+  | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "Ptyp_arrow"
   | Ptyp_tuple tys -> printer_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> printer_longident ~loc txt args
-  | Ptyp_object (_, _) -> dummy ~loc "printer_core_type Ptyp_object"
-  | Ptyp_class (_, _) -> dummy ~loc "printer_core_type Ptyp_class"
-  | Ptyp_alias (_, _) -> dummy ~loc "printer_core_type Ptyp_alias"
-  | Ptyp_variant (_, _, _) -> dummy ~loc "printer_core_type Ptyp_variant"
-  | Ptyp_poly (_, _) -> dummy ~loc "printer_core_type Ptyp_poly"
-  | Ptyp_package _ -> dummy ~loc "printer_core_type Ptpy_package"
-  | Ptyp_extension _ -> dummy ~loc "printer_core_type Ptyp_extension"
+  | Ptyp_object (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_object"
+  | Ptyp_class (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_class"
+  | Ptyp_alias (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_alias"
+  | Ptyp_variant (_, _, _) -> Raise.Unsupported.coretype ~loc "Ptyp_variant"
+  | Ptyp_poly (_, _) -> Raise.Unsupported.coretype ~loc "Ptyp_poly"
+  | Ptyp_package _ -> Raise.Unsupported.coretype ~loc "Ptpy_package"
+  | Ptyp_extension _ -> Raise.Unsupported.coretype ~loc "Ptyp_extension"
 
 and printer_tuple ~loc tys =
   let printers = List.map (printer_core_type ~loc) tys in
@@ -54,7 +54,8 @@ and printer_longident ~loc txt args =
       let err = printer_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Print.result [%e ok] [%e err]]
   | Lident id -> var ~loc id Printer
-  | _ -> dummy ~loc "printer_longident catch all"
+  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
+  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
 
 let printer_variant ~loc ldl =
   (* a function to treat one constructor at a time *)
@@ -110,12 +111,12 @@ let printer_record ~loc ldl =
 
 let printer_kind ~loc (tk : type_kind) =
   match tk with
-  | Ptype_abstract -> dummy ~loc "printer_kind Ptype_abstract"
+  | Ptype_abstract -> Raise.Unsupported.typekind ~loc "Ptype_abstract"
   | Ptype_variant cds -> printer_variant ~loc cds
   | Ptype_record ldl -> printer_record ~loc ldl
-  | Ptype_open -> dummy ~loc "printer_kind Ptype_open"
+  | Ptype_open -> Raise.Unsupported.typekind ~loc "Ptype_open"
 
 let printer_expr ~loc (type_decl : type_declaration) =
-  Option.fold
-    ~none:(printer_kind ~loc type_decl.ptype_kind)
-    ~some:(printer_core_type ~loc) type_decl.ptype_manifest
+  match type_decl.ptype_manifest with
+  | None -> printer_kind ~loc type_decl.ptype_kind
+  | Some ty -> printer_core_type ~loc ty

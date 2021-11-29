@@ -4,18 +4,18 @@ open Utils
 
 let rec gen_core_type ~loc (ct : core_type) =
   match ct.ptyp_desc with
-  | Ptyp_any -> dummy ~loc "gen_core_type Ptyp_any"
-  | Ptyp_var _ -> dummy ~loc "gen_core_type Ptyp_var"
-  | Ptyp_arrow (_, _, _) -> dummy ~loc "gen_core_type Ptyp_arrow"
+  | Ptyp_any -> Raise.Unsupported.coretype ~loc "wildcard"
+  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "alpha"
+  | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "arrow"
   | Ptyp_tuple tys -> gen_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> gen_longident ~loc txt args
-  | Ptyp_object (_, _) -> dummy ~loc "gen_core_type Ptyp_object"
-  | Ptyp_class (_, _) -> dummy ~loc "gen_core_type Ptyp_class"
-  | Ptyp_alias (_, _) -> dummy ~loc "gen_core_type Ptyp_alias"
-  | Ptyp_variant (_, _, _) -> dummy ~loc "gen_core_type Ptyp_variant"
-  | Ptyp_poly (_, _) -> dummy ~loc "gen_core_type Ptyp_poly"
-  | Ptyp_package _ -> dummy ~loc "gen_core_type Ptpy_package"
-  | Ptyp_extension _ -> dummy ~loc "gen_core_type Ptyp_extension"
+  | Ptyp_object (_, _) -> Raise.Unsupported.coretype ~loc "object"
+  | Ptyp_class (_, _) -> Raise.Unsupported.coretype ~loc "class"
+  | Ptyp_alias (_, _) -> Raise.Unsupported.coretype ~loc "alias"
+  | Ptyp_variant (_, _, _) -> Raise.Unsupported.coretype ~loc "variant"
+  | Ptyp_poly (_, _) -> Raise.Unsupported.coretype ~loc "poly"
+  | Ptyp_package _ -> Raise.Unsupported.coretype ~loc "package"
+  | Ptyp_extension _ -> Raise.Unsupported.coretype ~loc "extension"
 
 and gen_tuple ~loc tys =
   let gen =
@@ -55,7 +55,8 @@ and gen_longident ~loc txt args =
       let err = gen_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Gen.result [%e ok] [%e err]]
   | Lident id -> var ~loc id Gen
-  | _ -> dummy ~loc "gen_longident catch all"
+  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
+  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
 
 let gen_variant ~loc cds =
   (* a function that build the arguments of the constructor *)
@@ -66,7 +67,7 @@ let gen_variant ~loc cds =
             gen_core_type ~loc ct |> fun e -> eapply ~loc e [ eunit ~loc ])
           cts
         |> pexp_tuple_opt ~loc
-    | Pcstr_record _ldl -> Some (dummy ~loc "variant constructor with a record")
+    | Pcstr_record _ldl -> Raise.Unsupported.constructor ~loc "Pcstr_record"
   in
   (* a function that construct a generator of a constructor and its arguments *)
   let variant cd =
@@ -91,12 +92,12 @@ let gen_record ~loc cds =
 
 let gen_kind ~loc (tk : type_kind) =
   match tk with
-  | Ptype_abstract -> dummy ~loc "gen_kind Ptype_abstract"
+  | Ptype_abstract -> Raise.Unsupported.typekind ~loc "Ptype_abstract"
   | Ptype_variant cds -> gen_variant ~loc cds
   | Ptype_record ldl -> gen_record ~loc ldl
-  | Ptype_open -> dummy ~loc "gen_kind Ptype_open"
+  | Ptype_open -> Raise.Unsupported.typekind ~loc "Ptype_open"
 
 let gen_expr ~loc (type_decl : type_declaration) =
-  Option.fold
-    ~none:(gen_kind ~loc type_decl.ptype_kind)
-    ~some:(gen_core_type ~loc) type_decl.ptype_manifest
+  match type_decl.ptype_manifest with
+  | None -> gen_kind ~loc type_decl.ptype_kind
+  | Some ty -> gen_core_type ~loc ty

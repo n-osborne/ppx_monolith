@@ -23,23 +23,23 @@ let spec_kind ~loc ~name (tk : type_kind) =
   match tk with
   | Ptype_variant _ -> spec_variant ~loc ~name
   | Ptype_record _ -> spec_record ~loc ~name
-  | Ptype_open -> dummy ~loc "spec_kind Ptype_open"
-  | Ptype_abstract -> dummy ~loc "spec_kind Ptype_abstract"
+  | Ptype_open -> Raise.Unsupported.typekind ~loc "Ptype_open"
+  | Ptype_abstract -> Raise.Unsupported.typekind ~loc "Ptype_abstract"
 
 let rec spec_core_type ~loc (ct : core_type) =
   match ct.ptyp_desc with
-  | Ptyp_any -> dummy ~loc "spec_core_type Ptyp_any"
-  | Ptyp_var _ -> dummy ~loc "spec_core_type Ptyp_var"
-  | Ptyp_arrow (_, _, _) -> dummy ~loc "spec_core_type Ptyp_arrow"
+  | Ptyp_any -> Raise.Unsupported.coretype ~loc "wildcard"
+  | Ptyp_var _ -> Raise.Unsupported.coretype ~loc "alpha"
+  | Ptyp_arrow (_, _, _) -> Raise.Unsupported.coretype ~loc "arrow"
   | Ptyp_tuple tys -> spec_tuple ~loc tys
   | Ptyp_constr ({ txt; _ }, args) -> spec_longident ~loc txt args
-  | Ptyp_object (_, _) -> dummy ~loc "spec_core_type Ptyp_object"
-  | Ptyp_class (_, _) -> dummy ~loc "spec_core_type Ptyp_class"
-  | Ptyp_alias (_, _) -> dummy ~loc "spec_core_type Ptyp_alias"
-  | Ptyp_variant (_, _, _) -> dummy ~loc "spec_core_type Ptyp_variant"
-  | Ptyp_poly (_, _) -> dummy ~loc "spec_core_type Ptyp_poly"
-  | Ptyp_package _ -> dummy ~loc "spec_core_type Ptpy_package"
-  | Ptyp_extension _ -> dummy ~loc "spec_core_type Ptyp_extension"
+  | Ptyp_object (_, _) -> Raise.Unsupported.coretype ~loc "object"
+  | Ptyp_class (_, _) -> Raise.Unsupported.coretype ~loc "class"
+  | Ptyp_alias (_, _) -> Raise.Unsupported.coretype ~loc "alias"
+  | Ptyp_variant (_, _, _) -> Raise.Unsupported.coretype ~loc "variant"
+  | Ptyp_poly (_, _) -> Raise.Unsupported.coretype ~loc "poly"
+  | Ptyp_package _ -> Raise.Unsupported.coretype ~loc "package"
+  | Ptyp_extension _ -> Raise.Unsupported.coretype ~loc "extension"
 
 and spec_longident ~loc txt args =
   match txt with
@@ -70,8 +70,8 @@ and spec_longident ~loc txt args =
       let err = spec_core_type ~loc (List.nth args 1) in
       [%expr Monolith.result [%e ok] [%e err]]
   | Lident id -> var ~loc id Spec
-  | Ldot (_, _) -> dummy ~loc "spec_longident Ldot"
-  | Lapply (_, _) -> dummy ~loc "spec_longident Lapply"
+  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
+  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
 
 and spec_tuple ~loc tys =
   let gen = gen_tuple ~loc tys in
@@ -79,9 +79,9 @@ and spec_tuple ~loc tys =
   spec ~loc gen printer
 
 let spec_expr ~loc ~name (type_decl : type_declaration) =
-  Option.fold
-    ~none:(spec_kind ~loc ~name type_decl.ptype_kind)
-    ~some:(spec_core_type ~loc) type_decl.ptype_manifest
+  match type_decl.ptype_manifest with
+  | None -> spec_kind ~loc ~name type_decl.ptype_kind
+  | Some m -> spec_core_type ~loc m
 
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
   match type_decls with

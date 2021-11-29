@@ -1,9 +1,6 @@
 open Ppxlib
 open Ast_builder.Default
 
-let dummy ~loc str =
-  pexp_constant ~loc (Pconst_string (str, Location.none, None))
-
 type kind = Spec | Gen | Printer
 
 let kind_to_string = function
