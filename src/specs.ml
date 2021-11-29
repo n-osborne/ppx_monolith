@@ -84,17 +84,34 @@ let spec_expr ~loc ~name (type_decl : type_declaration) =
     ~some:(spec_core_type ~loc) type_decl.ptype_manifest
 
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
-  let make kind f td =
-    [%stri let [%p pat ~loc td.ptype_name.txt kind] = [%e f ~loc td]]
-  in
-  let printer = make Printer printer_expr in
-  let gen = make Gen gen_expr in
-  let spec =
-    make Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
-  in
   match type_decls with
   | [] -> assert false
-  | [ td ] -> [ printer td; gen td; spec td ]
-  | _tds ->
-      (* don't know what to do yet *)
-      assert false
+  | [ td ] ->
+      let make kind f td =
+        [%stri let [%p pat ~loc td.ptype_name.txt kind] = [%e f ~loc td]]
+      in
+      let printer = make Printer printer_expr in
+      let gen = make Gen gen_expr in
+      let spec =
+        make Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
+      in
+      [ printer td; gen td; spec td ]
+  | tds ->
+      let open Ast_builder.Default in
+      let bind kind f td =
+        value_binding ~loc
+          ~pat:(pat ~loc td.ptype_name.txt kind)
+          ~expr:(f ~loc td)
+      in
+      let printer = bind Printer printer_expr in
+      let gen = bind Gen gen_expr in
+      let spec =
+        bind Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
+      in
+      [
+        pstr_value ~loc Recursive (List.map printer tds);
+        pstr_value ~loc Recursive (List.map gen tds);
+        (* Monolith `spec` doesn't need to be mutually recursive,
+           only generators and printers *)
+        pstr_value ~loc Nonrecursive (List.map spec tds);
+      ]

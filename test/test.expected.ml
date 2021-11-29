@@ -225,3 +225,79 @@ include
                 [__monolith_t9_printer_ elt__0;
                 __monolith_t10_printer_ elt__1]))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
+type mutual_1 =
+  | C4 of mutual_2 [@@deriving monolith]
+and mutual_2 =
+  | C5 of mutual_1 
+  | C6 of int [@@deriving monolith]
+include
+  struct
+    let rec __monolith_mutual_1_printer_ =
+      function
+      | C4 pp_arg0 ->
+          PPrintOCaml.variant "" "C4" 0
+            [__monolith_mutual_2_printer_ pp_arg0]
+    and __monolith_mutual_2_printer_ =
+      function
+      | C5 pp_arg0 ->
+          PPrintOCaml.variant "" "C5" 0
+            [__monolith_mutual_1_printer_ pp_arg0]
+      | C6 pp_arg0 ->
+          PPrintOCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
+    let rec __monolith_mutual_1_gen_ () =
+      let v = [|((fun () -> C4 (__monolith_mutual_2_gen_ ())))|] in
+      (v.(Monolith.Gen.int (Array.length v) ())) ()
+    and __monolith_mutual_2_gen_ () =
+      let v =
+        [|((fun () -> C5 (__monolith_mutual_1_gen_ ())));((fun () ->
+                                                             C6
+                                                               (Monolith.Gen.closed_interval
+                                                                  Int.min_int
+                                                                  Int.max_int
+                                                                  ())))|] in
+      (v.(Monolith.Gen.int (Array.length v) ())) ()
+    let __monolith_mutual_1_spec_ =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_mutual_1_gen_
+           __monolith_mutual_1_printer_)
+        (Monolith.deconstructible __monolith_mutual_1_printer_)
+    and __monolith_mutual_2_spec_ =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_mutual_2_gen_
+           __monolith_mutual_2_printer_)
+        (Monolith.deconstructible __monolith_mutual_2_printer_)
+    let rec __monolith_mutual_1_printer_ =
+      function
+      | C4 pp_arg0 ->
+          PPrintOCaml.variant "" "C4" 0
+            [__monolith_mutual_2_printer_ pp_arg0]
+    and __monolith_mutual_2_printer_ =
+      function
+      | C5 pp_arg0 ->
+          PPrintOCaml.variant "" "C5" 0
+            [__monolith_mutual_1_printer_ pp_arg0]
+      | C6 pp_arg0 ->
+          PPrintOCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
+    let rec __monolith_mutual_1_gen_ () =
+      let v = [|((fun () -> C4 (__monolith_mutual_2_gen_ ())))|] in
+      (v.(Monolith.Gen.int (Array.length v) ())) ()
+    and __monolith_mutual_2_gen_ () =
+      let v =
+        [|((fun () -> C5 (__monolith_mutual_1_gen_ ())));((fun () ->
+                                                             C6
+                                                               (Monolith.Gen.closed_interval
+                                                                  Int.min_int
+                                                                  Int.max_int
+                                                                  ())))|] in
+      (v.(Monolith.Gen.int (Array.length v) ())) ()
+    let __monolith_mutual_1_spec_ =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_mutual_1_gen_
+           __monolith_mutual_1_printer_)
+        (Monolith.deconstructible __monolith_mutual_1_printer_)
+    and __monolith_mutual_2_spec_ =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith_mutual_2_gen_
+           __monolith_mutual_2_printer_)
+        (Monolith.deconstructible __monolith_mutual_2_printer_)
+  end[@@ocaml.doc "@inline"][@@merlin.hide ]

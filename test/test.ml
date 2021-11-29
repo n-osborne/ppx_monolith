@@ -13,3 +13,7 @@ type t8 = { f0 : int; f1 : string } [@@deriving monolith]
 type t9 = t0 [@@deriving monolith]
 type t10 = { f2 : t7; f3 : t8 } [@@deriving monolith]
 type t11 = t9 * t10 [@@deriving monolith]
+
+type mutual_1 = C4 of mutual_2 [@@deriving monolith]
+
+and mutual_2 = C5 of mutual_1 | C6 of int [@@deriving monolith]
