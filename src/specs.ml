@@ -3,26 +3,22 @@ open Generators
 open Printers
 open Utils
 
-let spec ~loc gen printer =
+let spec ~loc ~name =
+  (* A monolith `spec` is either constructlible (which needs a generator and a printer)
+     or deconstructible (which only needs a printer)
+     In order to build a `spec`, we rely on the already defined generators and printers
+     and on the naming convention. *)
+  let gen = var ~loc name Gen in
+  let printer = var ~loc name Printer in
   [%expr
     Monolith.ifpol
       (Monolith.easily_constructible [%e gen] [%e printer])
       (Monolith.deconstructible [%e printer])]
 
-let spec_variant ~loc ~name =
-  let gen = var ~loc name Gen in
-  let printer = var ~loc name Printer in
-  spec ~loc gen printer
-
-let spec_record ~loc ~name =
-  let gen = var ~loc name Gen in
-  let printer = var ~loc name Printer in
-  spec ~loc gen printer
-
 let spec_kind ~loc ~name (tk : type_kind) =
   match tk with
-  | Ptype_variant _ -> spec_variant ~loc ~name
-  | Ptype_record _ -> spec_record ~loc ~name
+  | Ptype_variant _ -> spec ~loc ~name
+  | Ptype_record _ -> spec ~loc ~name
   | Ptype_open -> Raise.Unsupported.typekind ~loc "Ptype_open"
   | Ptype_abstract -> Raise.Unsupported.typekind ~loc "Ptype_abstract"
 
@@ -50,12 +46,18 @@ and spec_longident ~loc txt args =
   | Lident "string" as lid ->
       let gen = gen_longident ~loc lid args in
       let printer = [%expr Monolith.Print.string] in
-      spec ~loc gen printer
+      [%expr
+        Monolith.ifpol
+          (Monolith.easily_constructible [%e gen] [%e printer])
+          (Monolith.deconstructible [%e printer])]
   | Lident "array" as lid ->
       assert (List.length args = 1);
       let gen = gen_longident ~loc lid args in
       let printer = printer_longident ~loc lid args in
-      spec ~loc gen printer
+      [%expr
+        Monolith.ifpol
+          (Monolith.easily_constructible [%e gen] [%e printer])
+          (Monolith.deconstructible [%e printer])]
   | Lident "list" ->
       assert (List.length args = 1);
       let param = spec_core_type ~loc (List.hd args) in
@@ -76,42 +78,49 @@ and spec_longident ~loc txt args =
 and spec_tuple ~loc tys =
   let gen = gen_tuple ~loc tys in
   let printer = printer_tuple ~loc tys in
-  spec ~loc gen printer
+  [%expr
+    Monolith.ifpol
+      (Monolith.easily_constructible [%e gen] [%e printer])
+      (Monolith.deconstructible [%e printer])]
 
 let spec_expr ~loc ~name (type_decl : type_declaration) =
+  (* If a type declaration has a manifest, then this is a core type.
+     Otherwise, will inspect its kind. *)
   match type_decl.ptype_manifest with
   | None -> spec_kind ~loc ~name type_decl.ptype_kind
   | Some m -> spec_core_type ~loc m
 
 let monolith_spec ~loc ~path:_ (_rec_flag, type_decls) =
-  match type_decls with
-  | [] -> assert false
-  | [ td ] ->
-      let make kind f td =
-        [%stri let [%p pat ~loc td.ptype_name.txt kind] = [%e f ~loc td]]
-      in
-      let printer = make Printer printer_expr in
-      let gen = make Gen gen_expr in
-      let spec =
-        make Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
-      in
-      [ printer td; gen td; spec td ]
-  | tds ->
-      let open Ast_builder.Default in
-      let bind kind f td =
-        value_binding ~loc
-          ~pat:(pat ~loc td.ptype_name.txt kind)
-          ~expr:(f ~loc td)
-      in
-      let printer = bind Printer printer_expr in
-      let gen = bind Gen gen_expr in
-      let spec =
-        bind Spec (fun ~loc x -> spec_expr ~loc ~name:x.ptype_name.txt x)
-      in
-      [
-        pstr_value ~loc Recursive (List.map printer tds);
-        pstr_value ~loc Recursive (List.map gen tds);
-        (* Monolith `spec` doesn't need to be mutually recursive,
-           only generators and printers *)
-        pstr_value ~loc Nonrecursive (List.map spec tds);
-      ]
+  (* For each type declaration -- simple or mutually recursive --
+     we build the printers, the generators and then the monolith `spec`.
+     If Monolith does not provide an already defined `spec` (e.g. for user
+     defined types), we build one using the printers and generators we've
+     just defined. *)
+  let open Ast_builder.Default in
+  let bind kind td =
+    (* The name of the new function is defined according to its kind
+       (printer, generator or spec) and the name of the type.
+       We rely a lot on this naming convention *)
+    let pat = pat ~loc td.ptype_name.txt kind in
+
+    let expr =
+      (* We call the appropriate builder *)
+      match kind with
+      | Spec ->
+          let name = td.ptype_name.txt in
+          spec_expr ~loc ~name td
+      | Gen -> gen_expr ~loc td
+      | Printer -> printer_expr ~loc td
+    in
+    value_binding ~loc ~pat ~expr
+  in
+
+  let flag = if List.length type_decls > 1 then Recursive else Nonrecursive in
+
+  [
+    pstr_value ~loc flag (List.map (bind Printer) type_decls);
+    pstr_value ~loc flag (List.map (bind Gen) type_decls);
+    (* No matter if the definition is mutually recursive, Monolith `spec` does
+       not need to be. *)
+    pstr_value ~loc Nonrecursive (List.map (bind Spec) type_decls);
+  ]
