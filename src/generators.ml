@@ -54,9 +54,9 @@ and gen_longident ~loc txt args =
       let ok = gen_core_type ~loc (List.hd args) in
       let err = gen_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Gen.result [%e ok] [%e err]]
-  | Lident id -> var ~loc id Gen
-  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
-  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
+  (* In the following cases (Lident _, Ldot (_,_) and Lapply (_,_)),
+     we rely on the fact that the `printer` is already defined *)
+  | lid -> lident ~loc lid Gen
 
 let gen_variant ~loc cds =
   (* a function that build the arguments of the constructor *)

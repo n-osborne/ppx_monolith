@@ -53,9 +53,9 @@ and printer_longident ~loc txt args =
       let ok = printer_core_type ~loc (List.hd args) in
       let err = printer_core_type ~loc (List.nth args 1) in
       [%expr Monolith.Print.result [%e ok] [%e err]]
-  | Lident id -> var ~loc id Printer
-  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
-  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
+  (* In the following cases (Lident _, Ldot (_,_) and Lapply (_,_)),
+     we rely on the fact that the `printer` is already defined *)
+  | lid -> lident ~loc lid Printer
 
 let printer_variant ~loc ldl =
   (* a function to treat one constructor at a time *)

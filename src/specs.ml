@@ -71,9 +71,9 @@ and spec_longident ~loc txt args =
       let ok = spec_core_type ~loc (List.hd args) in
       let err = spec_core_type ~loc (List.nth args 1) in
       [%expr Monolith.result [%e ok] [%e err]]
-  | Lident id -> var ~loc id Spec
-  | Ldot (_, _) -> Raise.Unsupported.longident ~loc "Ldot"
-  | Lapply (_, _) -> Raise.Unsupported.longident ~loc "Lapply"
+  (* In the following cases (Lident _, Ldot (_,_) and Lapply (_,_)),
+     we rely on the fact that the `spec` is already defined *)
+  | lid -> lident ~loc lid Spec
 
 and spec_tuple ~loc tys =
   let gen = gen_tuple ~loc tys in

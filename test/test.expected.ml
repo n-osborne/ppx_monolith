@@ -309,3 +309,16 @@ include
       Monolith.Gen.list (Monolith.Gen.int 42000) Monolith.Gen.sequential
     let __monolith__spec_t12 = Monolith.list (Monolith.sequential ())
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
+type t13 = {
+  f2: Mod.t }[@@deriving monolith]
+include
+  struct
+    let __monolith__printer_t13 { f2 } =
+      PPrintOCaml.record "" [("f2", (Mod.__monolith__printer_t f2))]
+    let __monolith__gen_t13 () = { f2 = (Mod.__monolith__gen_t ()) }
+    let __monolith__spec_t13 =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith__gen_t13
+           __monolith__printer_t13)
+        (Monolith.deconstructible __monolith__printer_t13)
+  end[@@ocaml.doc "@inline"][@@merlin.hide ]
