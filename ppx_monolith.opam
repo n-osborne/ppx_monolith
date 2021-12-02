@@ -1,12 +1,30 @@
 opam-version: "2.0"
 name: "ppx_monolith"
-synopsis: ""
-maintainer: "email@n-osborne.info"
-authors: "email@n-osborne.info"
+synopsis: "Ppx deriver for monolith test framework"
+maintainer: ["Nicolas Osborne <email@n-osborne.info>"]
+authors: ["Nicolas Osborne <email@n-osborne.info>"]
+homepage: "https://github.com/n-osborne/ppx_monolith"
+dev-repo: "git+https://github.com/n-osborne/ppx_monolith.git"
+doc: "https://n-osborne.github.io/ppx_monolith"
+bug-reports: "https://github.com/n-osborne/ppx_monolith/issues"
 depends: [
   "ocaml"
   "dune"
-  "ppxlib"]
+  "ppxlib"
+  "monolith"
+  "pprint"
+]
 build: [
-  ["dune" "subst"] 
-  "dune" "build" "-p" name "-j" jobs "@install" "@runtest" {with-test} "@doc" {with-doc}]
+  ["dune" "subst"] {dev} 
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]
