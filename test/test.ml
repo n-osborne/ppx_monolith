@@ -20,3 +20,4 @@ and mutual_2 = C5 of mutual_1 | C6 of int [@@deriving monolith]
 
 type 'a t12 = 'a list [@@deriving monolith]
 type t13 = { f2 : Mod.t } [@@deriving monolith]
+type t14 = C of { f4 : int; f5 : string } [@@deriving monolith]

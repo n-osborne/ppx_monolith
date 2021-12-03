@@ -322,3 +322,35 @@ include
            __monolith__printer_t13)
         (Monolith.deconstructible __monolith__printer_t13)
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
+type t14 =
+  | C of {
+  f4: int ;
+  f5: string } [@@deriving monolith]
+include
+  struct
+    let __monolith__printer_t14 =
+      function
+      | C { f4; f5 } ->
+          PPrintOCaml.variant "" "C" 0
+            [PPrintOCaml.record ""
+               [("f4", (Monolith.Print.int f4));
+               ("f5", (Monolith.Print.string f5))]]
+    let __monolith__gen_t14 () =
+      let v =
+        [|((fun () ->
+              C
+                {
+                  f4 =
+                    (Monolith.Gen.closed_interval Int.min_int Int.max_int ());
+                  f5 =
+                    (Monolith.Gen.string
+                       (Monolith.Gen.int Sys.max_string_length)
+                       Monolith.Gen.char ())
+                }))|] in
+      (v.(Monolith.Gen.int (Array.length v) ())) ()
+    let __monolith__spec_t14 =
+      Monolith.ifpol
+        (Monolith.easily_constructible __monolith__gen_t14
+           __monolith__printer_t14)
+        (Monolith.deconstructible __monolith__printer_t14)
+  end[@@ocaml.doc "@inline"][@@merlin.hide ]
