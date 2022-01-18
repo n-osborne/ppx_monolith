@@ -20,9 +20,9 @@ module Core_type = struct
   and tuple ~loc tys =
     let gen =
       pexp_tuple ~loc
-        (List.map (fun t -> eapply ~loc (derive ~loc t) [ eunit ~loc ]) tys)
+        (List.map (fun t -> Utils.trigger ~loc (derive ~loc t)) tys)
     in
-    [%expr fun () -> [%e gen]]
+    Utils.suspend ~loc gen
 
   and longident ~loc txt args =
     match txt with
@@ -59,49 +59,52 @@ module Core_type = struct
 end
 
 module Variant = struct
-  let derive ~loc cds =
-    (* a function that build the arguments of the constructor *)
-    let cstr_arg = function
-      | Pcstr_tuple cts ->
+  (* a function that build the arguments of the constructor *)
+  let cstr_arg ~loc = function
+    | Pcstr_tuple cts ->
+        List.map
+          (fun ct ->
+            let t = Core_type.derive ~loc ct in
+            Utils.trigger ~loc t)
+          cts
+        |> pexp_tuple_opt ~loc
+    | Pcstr_record ldl ->
+        let fields =
           List.map
-            (fun ct ->
-              let t = Core_type.derive ~loc ct in
-              eapply ~loc t [ eunit ~loc ])
-            cts
-          |> pexp_tuple_opt ~loc
-      | Pcstr_record ldl ->
-          let fields =
-            List.map
-              (fun ld ->
-                ( { txt = Ppxlib.lident ld.pld_name.txt; loc },
-                  eapply ~loc (Core_type.derive ~loc ld.pld_type) [ eunit ~loc ]
-                ))
-              ldl
-          in
-          Some (pexp_record ~loc fields None)
-    in
-    (* a function that construct a generator of a constructor and its arguments *)
-    let variant cd =
-      let cstr = pexp_construct ~loc { txt = Lident cd.pcd_name.txt; loc } in
-      [%expr fun () -> [%e cstr (cstr_arg cd.pcd_args)]]
-    in
+            (fun ld ->
+              ( Utils.ld_to_longident ~loc ld,
+                Utils.trigger ~loc (Core_type.derive ~loc ld.pld_type) ))
+            ldl
+        in
+        Some (pexp_record ~loc fields None)
+
+  (* a function that derives a generator of a constructor and its arguments *)
+  let variant ~loc cd =
+    let cstr = { txt = Ppxlib.lident cd.pcd_name.txt; loc } in
+    let args = cstr_arg ~loc cd.pcd_args in
+    Utils.suspend ~loc (pexp_construct ~loc cstr args)
+
+  let derive ~loc cds =
     (* an array of the different constructors with their arguments *)
-    let variants = List.map variant cds |> pexp_array ~loc in
+    let variants = List.map (variant ~loc) cds |> pexp_array ~loc in
     (* the generator choose one of the constructor *)
-    [%expr
-      fun () ->
+    let choice =
+      [%expr
         let v = [%e variants] in
         v.(Monolith.Gen.int (Array.length v) ()) ()]
+    in
+    (* Wait for the user to trigger it *)
+    Utils.suspend ~loc choice
 end
 
 module Record = struct
   let derive ~loc cds =
     let field fd =
       ( { txt = Lident fd.pld_name.txt; loc },
-        eapply ~loc (Core_type.derive ~loc fd.pld_type) [ eunit ~loc ] )
+        Utils.trigger ~loc (Core_type.derive ~loc fd.pld_type) )
     in
     let record = pexp_record ~loc (List.map field cds) None in
-    [%expr fun () -> [%e record]]
+    Utils.suspend ~loc record
 end
 
 let derive ~loc (type_decl : type_declaration) =

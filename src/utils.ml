@@ -19,3 +19,17 @@ let lident ~loc lid kind =
     | Lapply (lid0, lid1) -> Lapply (lid0, aux lid1)
   in
   pexp_ident ~loc { txt = aux lid; loc }
+
+let pvars ~loc = List.map (pvar ~loc)
+let ld_to_longident ~loc ld = { txt = Ppxlib.lident ld.pld_name.txt; loc }
+
+let record_pattern ~loc ldl =
+  let fields =
+    List.map
+      (fun ld -> (ld_to_longident ~loc ld, pvar ~loc ld.pld_name.txt))
+      ldl
+  in
+  ppat_record ~loc fields Closed
+
+let trigger ~loc fct = eapply ~loc fct [ eunit ~loc ]
+let suspend ~loc expr = [%expr fun () -> [%e expr]]

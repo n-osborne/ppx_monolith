@@ -56,6 +56,10 @@ module Core_type = struct
     (* In the following cases (Lident _, Ldot (_,_) and Lapply (_,_)),
        we rely on the fact that the `printer` is already defined *)
     | lid -> Utils.lident ~loc lid Printer
+
+  let representation ~loc var ty =
+    let printer = derive ~loc ty in
+    eapply ~loc printer [ evar ~loc var ]
 end
 
 module Record = struct
@@ -74,7 +78,7 @@ module Record = struct
 
   let derive ~loc ldl =
     let pat pld =
-      ({ txt = Lident pld.pld_name.txt; loc }, pvar ~loc pld.pld_name.txt)
+      ({ txt = lident pld.pld_name.txt; loc }, pvar ~loc pld.pld_name.txt)
     in
     let rec_pat = ppat_record ~loc (List.map pat ldl) Closed in
     let fields = representation ~loc ldl in
@@ -82,58 +86,38 @@ module Record = struct
 end
 
 module Variant = struct
-  let derive ~loc ldl =
-    (* a function to treat one constructor at a time *)
-    let variant cd =
-      (* a longident for the constructor *)
-      let cident = { txt = Lident cd.pcd_name.txt; loc } in
+  (* a function to treat one constructor at a time *)
+  let variant ~loc cd =
+    (* a longident for the constructor *)
+    let cident = { txt = Lident cd.pcd_name.txt; loc } in
+    (* Only lhs and pp_args are different depending on the case of cd.pcd_args*)
+    let lhs, representations =
       match cd.pcd_args with
       | Pcstr_tuple args ->
-          (* a list of names for the arguments *)
+          (* A list of name for the elements of the tuple *)
           let xs = List.mapi (fun i _ -> "pp_arg" ^ Int.to_string i) args in
-          (* bundle the arguments in an optional tuple of pattern variables*)
-          let parg = ppat_tuple_opt ~loc (List.map (pvar ~loc) xs) in
-          (* left hand side is C (a0, a1,...) *)
-          let lhs = ppat_construct ~loc cident parg in
-          (* let's call the respective printers on the arguments of the constructor *)
-          let pp_args =
-            List.map2
-              (fun x ty ->
-                let printer = Core_type.derive ~loc ty in
-                eapply ~loc printer [ evar ~loc x ])
-              xs args
-            |> elist ~loc
+          (* An OCaml expression for the list of the representations of the elements of the tuple *)
+          let representations =
+            List.map2 (Core_type.representation ~loc) xs args |> elist ~loc
           in
-          (* right hand side print the variant *)
-          let rhs =
-            [%expr
-              PPrintOCaml.variant ""
-                [%e estring ~loc cd.pcd_name.txt]
-                0 [%e pp_args]]
-          in
-          case ~guard:None ~lhs ~rhs
+          let parg = ppat_tuple_opt ~loc (Utils.pvars ~loc xs) in
+          (ppat_construct ~loc cident parg, representations)
       | Pcstr_record ldl ->
-          let lhs =
-            ppat_construct ~loc cident
-              (Some
-                 (ppat_record ~loc
-                    (List.map
-                       (fun ld ->
-                         ( { txt = Ppxlib.lident ld.pld_name.txt; loc },
-                           pvar ~loc ld.pld_name.txt ))
-                       ldl)
-                    Closed))
-          in
-          let pp_args = Record.representation ~loc ldl in
-          let rhs =
-            [%expr
-              PPrintOCaml.variant ""
-                [%e estring ~loc cd.pcd_name.txt]
-                0 [ [%e pp_args] ]]
-          in
-          case ~guard:None ~lhs ~rhs
+          let record_pat = Some (Utils.record_pattern ~loc ldl) in
+          ( ppat_construct ~loc cident record_pat,
+            [%expr [ [%e Record.representation ~loc ldl] ]] )
     in
-    let cases = List.map variant ldl in
+    (* In the right hand side, we print the variant *)
+    let rhs =
+      [%expr
+        PPrintOCaml.variant ""
+          [%e estring ~loc cd.pcd_name.txt]
+          0 [%e representations]]
+    in
+    case ~guard:None ~lhs ~rhs
+
+  let derive ~loc ldl =
+    let cases = List.map (variant ~loc) ldl in
     pexp_function ~loc cases
 end
 

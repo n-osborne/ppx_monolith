@@ -81,6 +81,7 @@ let derive ~loc ~name (type_decl : type_declaration) =
   match type_decl.ptype_manifest with
   | None -> (
       match type_decl.ptype_kind with
+      (* For both variants and records, printers and generators has already be defined *)
       | Ptype_variant _ -> ifpol ~loc ~name
       | Ptype_record _ -> ifpol ~loc ~name
       | Ptype_open -> Raise.Unsupported.typekind ~loc "Ptype_open"
