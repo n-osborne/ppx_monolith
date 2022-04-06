@@ -83,7 +83,7 @@ include
   struct
     let __monolith__printer_t6 x =
       let (elt__0, elt__1) = x in
-      PPrintOCaml.tuple
+      PPrint.OCaml.tuple
         [Monolith.Print.int elt__0; Monolith.Print.string elt__1]
     let __monolith__gen_t6 () =
       ((Monolith.Gen.closed_interval Int.min_int Int.max_int ()),
@@ -98,12 +98,12 @@ include
                    Monolith.Gen.char ())))
            (fun x ->
               let (elt__0, elt__1) = x in
-              PPrintOCaml.tuple
+              PPrint.OCaml.tuple
                 [Monolith.Print.int elt__0; Monolith.Print.string elt__1]))
         (Monolith.deconstructible
            (fun x ->
               let (elt__0, elt__1) = x in
-              PPrintOCaml.tuple
+              PPrint.OCaml.tuple
                 [Monolith.Print.int elt__0; Monolith.Print.string elt__1]))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
 type t7 =
@@ -115,17 +115,17 @@ include
   struct
     let __monolith__printer_t7 =
       function
-      | C0 -> PPrintOCaml.variant "" "C0" 0 []
+      | C0 -> PPrint.OCaml.variant "" "C0" 0 []
       | C1 pp_arg0 ->
-          PPrintOCaml.variant "" "C1" 0 [Monolith.Print.int pp_arg0]
+          PPrint.OCaml.variant "" "C1" 0 [Monolith.Print.int pp_arg0]
       | C2 (pp_arg0, pp_arg1) ->
-          PPrintOCaml.variant "" "C2" 0
+          PPrint.OCaml.variant "" "C2" 0
             [Monolith.Print.int pp_arg0; Monolith.Print.string pp_arg1]
       | C3 pp_arg0 ->
-          PPrintOCaml.variant "" "C3" 0
+          PPrint.OCaml.variant "" "C3" 0
             [((fun x ->
                  let (elt__0, elt__1) = x in
-                 PPrintOCaml.tuple
+                 PPrint.OCaml.tuple
                    [Monolith.Print.char elt__0; Monolith.Print.bool elt__1]))
                pp_arg0]
     let __monolith__gen_t7 () =
@@ -161,7 +161,7 @@ type t8 = {
 include
   struct
     let __monolith__printer_t8 { f0; f1 } =
-      PPrintOCaml.record ""
+      PPrint.OCaml.record ""
         [("f0", (Monolith.Print.int f0)); ("f1", (Monolith.Print.string f1))]
     let __monolith__gen_t8 () =
       {
@@ -189,7 +189,7 @@ type t10 = {
 include
   struct
     let __monolith__printer_t10 { f2; f3 } =
-      PPrintOCaml.record ""
+      PPrint.OCaml.record ""
         [("f2", (__monolith__printer_t7 f2));
         ("f3", (__monolith__printer_t8 f3))]
     let __monolith__gen_t10 () =
@@ -205,7 +205,7 @@ include
   struct
     let __monolith__printer_t11 x =
       let (elt__0, elt__1) = x in
-      PPrintOCaml.tuple
+      PPrint.OCaml.tuple
         [__monolith__printer_t9 elt__0; __monolith__printer_t10 elt__1]
     let __monolith__gen_t11 () =
       ((__monolith__gen_t9 ()), (__monolith__gen_t10 ()))
@@ -215,13 +215,13 @@ include
            (fun () -> ((__monolith__gen_t9 ()), (__monolith__gen_t10 ())))
            (fun x ->
               let (elt__0, elt__1) = x in
-              PPrintOCaml.tuple
+              PPrint.OCaml.tuple
                 [__monolith__printer_t9 elt__0;
                 __monolith__printer_t10 elt__1]))
         (Monolith.deconstructible
            (fun x ->
               let (elt__0, elt__1) = x in
-              PPrintOCaml.tuple
+              PPrint.OCaml.tuple
                 [__monolith__printer_t9 elt__0;
                 __monolith__printer_t10 elt__1]))
   end[@@ocaml.doc "@inline"][@@merlin.hide ]
@@ -235,15 +235,15 @@ include
     let rec __monolith__printer_mutual_1 =
       function
       | C4 pp_arg0 ->
-          PPrintOCaml.variant "" "C4" 0
+          PPrint.OCaml.variant "" "C4" 0
             [__monolith__printer_mutual_2 pp_arg0]
     and __monolith__printer_mutual_2 =
       function
       | C5 pp_arg0 ->
-          PPrintOCaml.variant "" "C5" 0
+          PPrint.OCaml.variant "" "C5" 0
             [__monolith__printer_mutual_1 pp_arg0]
       | C6 pp_arg0 ->
-          PPrintOCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
+          PPrint.OCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
     let rec __monolith__gen_mutual_1 () =
       let v = [|((fun () -> C4 (__monolith__gen_mutual_2 ())))|] in
       (v.(Monolith.Gen.int (Array.length v) ())) ()
@@ -269,15 +269,15 @@ include
     let rec __monolith__printer_mutual_1 =
       function
       | C4 pp_arg0 ->
-          PPrintOCaml.variant "" "C4" 0
+          PPrint.OCaml.variant "" "C4" 0
             [__monolith__printer_mutual_2 pp_arg0]
     and __monolith__printer_mutual_2 =
       function
       | C5 pp_arg0 ->
-          PPrintOCaml.variant "" "C5" 0
+          PPrint.OCaml.variant "" "C5" 0
             [__monolith__printer_mutual_1 pp_arg0]
       | C6 pp_arg0 ->
-          PPrintOCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
+          PPrint.OCaml.variant "" "C6" 0 [Monolith.Print.int pp_arg0]
     let rec __monolith__gen_mutual_1 () =
       let v = [|((fun () -> C4 (__monolith__gen_mutual_2 ())))|] in
       (v.(Monolith.Gen.int (Array.length v) ())) ()
@@ -314,7 +314,7 @@ type t13 = {
 include
   struct
     let __monolith__printer_t13 { f2 } =
-      PPrintOCaml.record "" [("f2", (Mod.__monolith__printer_t f2))]
+      PPrint.OCaml.record "" [("f2", (Mod.__monolith__printer_t f2))]
     let __monolith__gen_t13 () = { f2 = (Mod.__monolith__gen_t ()) }
     let __monolith__spec_t13 =
       Monolith.ifpol
@@ -331,8 +331,8 @@ include
     let __monolith__printer_t14 =
       function
       | C { f4; f5 } ->
-          PPrintOCaml.variant "" "C" 0
-            [PPrintOCaml.record ""
+          PPrint.OCaml.variant "" "C" 0
+            [PPrint.OCaml.record ""
                [("f4", (Monolith.Print.int f4));
                ("f5", (Monolith.Print.string f5))]]
     let __monolith__gen_t14 () =

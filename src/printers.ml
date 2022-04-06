@@ -28,7 +28,7 @@ module Core_type = struct
     [%expr
       fun x ->
         let [%p pats] = x in
-        PPrintOCaml.tuple [%e tuple]]
+        PPrint.OCaml.tuple [%e tuple]]
 
   and longident ~loc txt args =
     match txt with
@@ -74,7 +74,7 @@ module Record = struct
         ]
     in
     let fields = List.map pp_field ldl |> elist ~loc in
-    [%expr PPrintOCaml.record "" [%e fields]]
+    [%expr PPrint.OCaml.record "" [%e fields]]
 
   let derive ~loc ldl =
     let pat pld =
@@ -110,7 +110,7 @@ module Variant = struct
     (* In the right hand side, we print the variant *)
     let rhs =
       [%expr
-        PPrintOCaml.variant ""
+        PPrint.OCaml.variant ""
           [%e estring ~loc cd.pcd_name.txt]
           0 [%e representations]]
     in
