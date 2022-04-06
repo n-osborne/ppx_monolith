@@ -11,4 +11,14 @@
 
 </div>
 
-*WIP* ppx deriver for monolith test framework 
+`ppx_monolith` is a [ppx_deriving](https://github.com/ocaml-ppx/ppx_deriving) plugin
+for [monolith](https://gitlab.inria.fr/fpottier/monolith) model based test framework.
+
+## Example
+
+```
+type t = A of int | B of string [@@deriving monolith]
+```
+
+will automatically generate the `(t, t) Monolith.spec` type necessary to write a 
+`monolith` test suite involving the type `t`.
